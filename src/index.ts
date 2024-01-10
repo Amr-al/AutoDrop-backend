@@ -2,7 +2,18 @@ require("dotenv").config();
 const express = require("express");
 const app = express();
 const cors = require("cors");
-
+require('./utils/passport')
+const passport = require("passport");
+const session = require("express-session");
+app.use(
+  session({
+    secret: "dsiidihi",
+    resave: false,
+    saveUninitialized: false,
+  })
+);
+app.use(passport.initialize());
+app.use(passport.session());
 app.use(express.json());
 app.use(
   cors({
