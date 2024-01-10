@@ -11,7 +11,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 const mongoose = require("mongoose");
 exports.conect = () => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        console.log(process.env.DB_URL, process.env.GOOGLE_CLIENT_ID);
         mongoose
             .connect(process.env.DB_URL, {})
             .then(() => {
