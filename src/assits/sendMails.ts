@@ -9,7 +9,7 @@ const transporter = nodemailer.createTransport({
 });
 const sendMail = (sub:string, cont:string, to:string) => {
   let mailOptions = {
-    from: "amrmohamed09@gmail.com",
+    from: "support@autodrop.me",
     to: to,
     subject: sub,
     html: cont,

@@ -1,6 +1,9 @@
 const User = require("../models/userModel");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const speakeasy = require("speakeasy");
+const secret = speakeasy.generateSecret({ length: 20 });
+const sendEmail = require("../assits/sendMails");
 let validateEmail = function (email: string) {
   let re = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
   return re.test(email);
@@ -140,5 +143,65 @@ const editProfile = async (req: any, res: any) => {
     return res.status(500).json("something went wrong");
   }
 };
-module.exports = { signUp, signIn, editProfile };
+
+const forgetPassword = async (req: any, res: any) => {
+  let { id, OTP, password, confirmPassword } = req.body;
+  if (!id) return res.status(400).json("wrong data");
+  if (!OTP) return res.status(400).json("wrong data");
+  if (!password) return res.status(400).json("the password is missing");
+  if (confirmPassword != password)
+    return res.status(400).json("the two passwords are not the same");
+  try {
+    let user = await User.findOne({ _id: id, OTP: OTP });
+    if (!user) {
+      return res.status(400).json("user doesn't exist");
+    } else {
+      let hashed: string = await bcrypt.hash(password, 10);
+      const code = speakeasy.totp({
+        secret: secret.base32,
+        encoding: "base32",
+      });
+
+      await User.findOneAndUpdate(
+        { _id: id, OTP: OTP },
+        { OTP: code, password: hashed }
+      );
+
+      return res.status(200).json("password changed successfully");
+    }
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json("something went wrong");
+  }
+};
+
+const sendForgetMail = async (req: any, res: any) => {
+  try {
+    const { email } = req.body;
+    let check = validateEmail(email);
+    if (!check) return res.status(400).json("Please enter a valid email");
+    const user = await User.findOne({ email: email });
+    if (!user) {
+      return res.status(400).json("User doesn't exist");
+    }
+    const code = speakeasy.totp({
+      secret: secret.base32,
+      encoding: "base32",
+    });
+    user.OTP = code;
+    let base: string | undefined = process.env.Frontend_Link;
+    const url = `${base}/resetpassword/${user._id}/${user.OTP}`;
+    sendEmail(
+      "اعاده تعيين كلمه السر",
+      `<h4>اضغط علي الرابط التالي لاعاده تعيين كلمه المرر</h4><a href=${url}>${url}<a/> <h4>فريق [Auto Drop]</h4>`,
+      email
+    );
+    user.save();
+    return res.status(200).json("message sent");
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json("something went wrong");
+  }
+};
+module.exports = { signUp, signIn, editProfile, sendForgetMail, forgetPassword };
 export {};

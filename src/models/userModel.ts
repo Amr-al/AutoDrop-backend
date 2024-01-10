@@ -15,6 +15,7 @@ const userModel = new mongoose.Schema(
     merchantID: { type: Number, default: null, maxLength: 25 },
     storeName: { type: String, default: null, maxLength: 50 },
     storeLink: { type: String, default: null, maxLength: 50 },
+    OTP: { type: String, maxLength: 10 },
   },
   { timestamps: true }
 );
