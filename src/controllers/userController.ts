@@ -203,5 +203,58 @@ const sendForgetMail = async (req: any, res: any) => {
     return res.status(500).json("something went wrong");
   }
 };
-module.exports = { signUp, signIn, editProfile, sendForgetMail, forgetPassword };
+
+const generateProfile = async (userProfile: any): Promise<string> => {
+  let email = userProfile.emails[0].value,
+    name = userProfile.displayName;
+  let user = await User.findOne({ email: email }),
+    token = null;
+  if (user) {
+    let tmp = {
+      name: user.name,
+      image: user.image,
+      id: user._id,
+      email: user.email,
+      phone: user.phone,
+      country: user.cou,
+    };
+    token = jwt.sign(tmp, "HS256");
+  } else {
+    let randm = Math.floor(Math.random() * 10000) + 1;
+    let pass = "quflpdj" + randm,
+      original;
+    original = pass;
+    pass = await bcrypt.hash(pass, 10);
+    user = await User.create({
+      email: email,
+      name: name,
+      password: pass,
+      image: userProfile.photos[0].value,
+    });
+    token = jwt.sign(
+      {
+        _id: user._id,
+        email: email,
+        name: name,
+        password: pass,
+        image: userProfile.photos[0].value,
+      },
+      "HS256"
+    );
+    sendEmail(
+      "👋 ترحيب",
+      `<h1>مرحبًا بك في موقعنا 👋</h1><h3>عزيزي ${name}</h3><h3>شكرًا لانضمامك إلى موقعنا. نحن سعداء لكونك عضوًا في مجتمعنا.</h3><h3>الرقم السري الخاصك بيك هو ${original}</h3><h3>يُرجى النظر حولك واستكشاف جميع الميزات التي نقدمها. إذا كان لديك أي أسئلة أو مشاكل، فلا تتردد في الاتصال بنا.</h3><h3>مرة أخرى، نرحب بك في موقعنا!</h3><h3>أطيب التحيات،</h3> <h3>فريق [Auto Drop]</h3>`,
+      email
+    );
+  }
+  return token;
+};
+module.exports = {
+  signUp,
+  signIn,
+  editProfile,
+  sendForgetMail,
+  forgetPassword,
+  generateProfile,
+};
 export {};
