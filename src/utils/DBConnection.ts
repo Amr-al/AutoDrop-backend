@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 exports.conect = async () => {
   try {
-    console.log(process.env.DB_URL);
+    console.log(process.env.DB_URL, process.env.GOOGLE_CLIENT_ID);
     mongoose
       .connect(process.env.DB_URL, {})
       .then(() => {
