@@ -9,12 +9,7 @@ const {
 } = require("../controllers/userController");
 const validation = require("../assits/validation");
 const upload = require("../assits/multer");
-const sendEmail = require("../assits/sendMails");
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
 const passport = require("passport");
-const TwitterStrategy = require("passport-twitter");
-const User = require("../models/userModel");
 
 router.post("/signup", signUp);
 router.post("/signin", signIn);
