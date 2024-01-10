@@ -108,12 +108,13 @@ const editProfile = async (req: any, res: any) => {
       return res.status(400).json("make sure that you entered a correct data");
     }
     let password = null;
+    let user = await User.findById(req.user.id);
     if (req.body.password) {
       password = await bcrypt.hash(req.body.password, 10);
     }
     let same: boolean = await bcrypt.compare(
       req.body.currentPassword,
-      req.user.password
+      user.password
     );
     if (!same) {
       return res.status(400).json("current password is wrong");
@@ -127,7 +128,6 @@ const editProfile = async (req: any, res: any) => {
       merchantID: req.body.merchantID || req.user.merchantID,
       storeName: req.body.storeName || req.user.storeName,
       storeLink: req.body.storeLink || req.user.storeLink,
-      password: password || req.user.password,
       id: req.user.id,
     };
     await User.findByIdAndUpdate(req.user.id, update);
