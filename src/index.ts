@@ -7,7 +7,7 @@ const passport = require("passport");
 const session = require("express-session");
 app.use(
   session({
-    secret: "dsiidihi",
+    secret: process.env.secret,
     resave: false,
     saveUninitialized: false,
   })
