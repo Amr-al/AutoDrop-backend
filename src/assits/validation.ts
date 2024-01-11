@@ -1,6 +1,6 @@
-const jwt = require("jsonwebtoken");
+import jwt from "jsonwebtoken";
 
-exports.validation = (req: any, res: any, next: any) => {
+export const validation = (req: any, res: any, next: any) => {
   const auth = req.headers["authorization"];
   if (auth == null) {
     return res.status(400).json("not authorized");

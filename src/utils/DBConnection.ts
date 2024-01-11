@@ -1,9 +1,10 @@
-const mongoose = require("mongoose");
-exports.conect = async () => {
+import mongoose from "mongoose";
+
+export const conect = async () => {
   try {
     console.log(process.env.DB_URL, process.env.GOOGLE_CLIENT_ID);
     mongoose
-      .connect(process.env.DB_URL, {})
+      .connect(process.env.DB_URL!, {})
       .then(() => {
         console.log("database Connected");
       })

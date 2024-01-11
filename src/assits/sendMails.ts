@@ -7,7 +7,7 @@ const transporter = nodemailer.createTransport({
     pass: process.env.NodeMailerPass,
   },
 });
-const sendMail = (sub:string, cont:string, to:string) => {
+const sendMail = (sub: string, cont: string, to: string) => {
   let mailOptions = {
     from: "support@autodrop.me",
     to: to,
@@ -15,7 +15,7 @@ const sendMail = (sub:string, cont:string, to:string) => {
     html: cont,
   };
 
-  transporter.sendMail(mailOptions, function (error:any, info:any) {
+  transporter.sendMail(mailOptions, function (error: any, info: any) {
     if (error) {
       console.log(error);
     } else {
@@ -24,4 +24,4 @@ const sendMail = (sub:string, cont:string, to:string) => {
   });
 };
 
-module.exports = sendMail
+export default sendMail;

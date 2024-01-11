@@ -1,14 +1,17 @@
-const User = require("../models/userModel");
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
-const speakeasy = require("speakeasy");
+import User from "../models/userModel";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import speakeasy from "speakeasy";
+import sendMail from "../assits/sendMails";
+
 const secret = speakeasy.generateSecret({ length: 20 });
-const sendEmail = require("../assits/sendMails");
+
 let validateEmail = function (email: string) {
   let re = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
   return re.test(email);
 };
-const signUp = async (req: any, res: any) => {
+
+export const signUp = async (req: any, res: any) => {
   try {
     const { name, email, password, role } = req.body;
     if (!name) {
@@ -58,7 +61,7 @@ const signUp = async (req: any, res: any) => {
   }
 };
 
-const signIn = async (req: any, res: any) => {
+export const signIn = async (req: any, res: any) => {
   try {
     const { email, password } = req.body;
     if (!email) {
@@ -102,7 +105,7 @@ const signIn = async (req: any, res: any) => {
   }
 };
 
-const editProfile = async (req: any, res: any) => {
+export const editProfile = async (req: any, res: any) => {
   try {
     if (
       req.body.password &&
@@ -117,7 +120,7 @@ const editProfile = async (req: any, res: any) => {
     }
     let same: boolean = await bcrypt.compare(
       req.body.currentPassword,
-      user.password
+      user!.password
     );
     if (!same) {
       return res.status(400).json("current password is wrong");
@@ -144,7 +147,7 @@ const editProfile = async (req: any, res: any) => {
   }
 };
 
-const forgetPassword = async (req: any, res: any) => {
+export const forgetPassword = async (req: any, res: any) => {
   let { id, OTP, password, confirmPassword } = req.body;
   if (!id) return res.status(400).json("wrong data");
   if (!OTP) return res.status(400).json("wrong data");
@@ -175,7 +178,7 @@ const forgetPassword = async (req: any, res: any) => {
   }
 };
 
-const sendForgetMail = async (req: any, res: any) => {
+export const sendForgetMail = async (req: any, res: any) => {
   try {
     const { email } = req.body;
     let check = validateEmail(email);
@@ -191,7 +194,7 @@ const sendForgetMail = async (req: any, res: any) => {
     user.OTP = code;
     let base: string | undefined = process.env.Frontend_Link;
     const url = `${base}/resetpassword/${user._id}/${user.OTP}`;
-    sendEmail(
+    sendMail(
       "اعاده تعيين كلمه السر",
       `<h4>اضغط علي الرابط التالي لاعاده تعيين كلمه المرر</h4><a href=${url}>${url}<a/> <h4>فريق [Auto Drop]</h4>`,
       email
@@ -204,9 +207,13 @@ const sendForgetMail = async (req: any, res: any) => {
   }
 };
 
-const generateProfile = async (userProfile: any): Promise<string> => {
-  let email = userProfile.emails[0].value,
-    name = userProfile.displayName;
+export const generateProfile = async (userProfile: any): Promise<string> => {
+  // console.log(userProfile);
+
+  let email = userProfile._json.email,
+    name = userProfile._json.name;
+  console.log(email);
+
   let user = await User.findOne({ email: email }),
     token = null;
   if (user) {
@@ -216,7 +223,7 @@ const generateProfile = async (userProfile: any): Promise<string> => {
       id: user._id,
       email: user.email,
       phone: user.phone,
-      country: user.cou,
+      country: user.country,
     };
     token = jwt.sign(tmp, "HS256");
   } else {
@@ -229,7 +236,7 @@ const generateProfile = async (userProfile: any): Promise<string> => {
       email: email,
       name: name,
       password: pass,
-      image: userProfile.photos[0].value,
+      image: userProfile._json.picture,
     });
     token = jwt.sign(
       {
@@ -237,11 +244,11 @@ const generateProfile = async (userProfile: any): Promise<string> => {
         email: email,
         name: name,
         password: pass,
-        image: userProfile.photos[0].value,
+        image: userProfile._json.picture,
       },
       "HS256"
     );
-    sendEmail(
+    sendMail(
       "👋 ترحيب",
       `<h1>مرحبًا بك في موقعنا 👋</h1><h3>عزيزي ${name}</h3><h3>شكرًا لانضمامك إلى موقعنا. نحن سعداء لكونك عضوًا في مجتمعنا.</h3><h3>الرقم السري الخاصك بيك هو ${original}</h3><h3>يُرجى النظر حولك واستكشاف جميع الميزات التي نقدمها. إذا كان لديك أي أسئلة أو مشاكل، فلا تتردد في الاتصال بنا.</h3><h3>مرة أخرى، نرحب بك في موقعنا!</h3><h3>أطيب التحيات،</h3> <h3>فريق [Auto Drop]</h3>`,
       email
@@ -249,12 +256,3 @@ const generateProfile = async (userProfile: any): Promise<string> => {
   }
   return token;
 };
-module.exports = {
-  signUp,
-  signIn,
-  editProfile,
-  sendForgetMail,
-  forgetPassword,
-  generateProfile,
-};
-export {};

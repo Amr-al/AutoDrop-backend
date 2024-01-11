@@ -1,20 +1,28 @@
-const multer = require('multer')
-const { CloudinaryStorage } = require("multer-storage-cloudinary");
+import { Request } from "express";
+import multer, { FileFilterCallback } from "multer";
 
-const cloudinary = require("cloudinary").v2;
-cloudinary.config({
-  cloud_name: process.env.cloud_name,
-  api_key: process.env.api_key,
-  api_secret: process.env.api_secret,
-  secure: true,
-});
-const storage = new CloudinaryStorage({
-  cloudinary: cloudinary,
-  params: {
-    folder: "AutoDrop",
+const storage = multer.diskStorage({
+  filename: (
+    req: Request,
+    file: Express.Multer.File,
+    cb: (error: Error | null, filename: string) => void
+  ) => {
+    cb(null, file.originalname);
   },
 });
-const upload:any = multer({ storage: storage });
 
-module.exports = upload
-export{};
+const multerFilter = (
+  req: Request,
+  file: Express.Multer.File,
+  cb: FileFilterCallback
+) => {
+  if (file.mimetype.startsWith("image") || file.mimetype.startsWith("video")) {
+    cb(null, true);
+  } else {
+    cb(null, false);
+  }
+};
+
+const upload = multer({ storage: storage, fileFilter: multerFilter });
+
+export default upload;

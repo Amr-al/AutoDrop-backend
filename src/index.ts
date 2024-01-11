@@ -1,33 +1,71 @@
-require("dotenv").config();
-const express = require("express");
+import express from "express";
+import("./utils/passport");
+import dotenv from "dotenv";
+dotenv.config({ path: ".env" });
+import cors from "cors";
+import passport from "passport";
+import session from "express-session";
+import cookieParser from "cookie-parser";
+import morgan from "morgan";
+import helmet from "helmet";
+import xss from "xss";
+import compression from "compression";
+import { conect } from "./utils/DBConnection";
+import userRoutes from "./routes/userRoutes";
+
 const app = express();
-const cors = require("cors");
-require('./utils/passport')
-const passport = require("passport");
-const session = require("express-session");
-app.use(
-  session({
-    secret: process.env.secret,
-    resave: false,
-    saveUninitialized: false,
-  })
-);
-app.use(passport.initialize());
-app.use(passport.session());
+
+//Parse json bodies
 app.use(express.json());
+
+//Parse cookies
+app.use(cookieParser());
+
+//Allow cors for all domains
 app.use(
   cors({
     origin: "*",
-    methods: "GET,POST,PUT,DELETE,PATCH",
     credentials: true,
+  }) as any
+);
+
+//Session middleware
+app.use(
+  session({
+    secret: process.env.secret!,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: process.env.NODE_ENV === "production",
+      httpOnly: true,
+    },
   })
 );
-const { conect } = require("./utils/DBConnection");
+
+//Initialize passport
+app.use(passport.initialize());
+
+//Use passport session
+app.use(passport.session());
+
+//Use morgan logger in the develpment
+app.use(morgan("dev"));
+
+//Set security http headers
+app.use(helmet());
+
+//Data sanitization against xss attacks
+xss('<script>alert("xss");</script>');
+
+//Compress all text sent in the response to the client
+if (process.env.NODE_ENV === "production") {
+  app.use(compression());
+}
+
 conect();
 
-const userRoutes = require("./routes/userRoutes");
-app.use("/auth", userRoutes);
-
+//Global resources
+app.use("/api/v1/auth", userRoutes);
 
 app.listen(5000, () => {
   console.log(`server is running `);
