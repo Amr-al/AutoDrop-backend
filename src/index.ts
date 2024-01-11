@@ -12,6 +12,8 @@ import xss from "xss";
 import compression from "compression";
 import { conect } from "./utils/DBConnection";
 import userRoutes from "./routes/userRoutes";
+import globalErrorHandler from "./controllers/errorController";
+import AppError from "./utils/appError";
 
 const app = express();
 
@@ -67,6 +69,14 @@ conect();
 //Global resources
 app.use("/api/v1/auth", userRoutes);
 
-app.listen(5000, () => {
+// Handle requests from wrong urls
+app.all("*", (req, res, next) => {
+  next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
+});
+
+//Using global error handling middleware
+app.use(globalErrorHandler);
+
+app.listen(10000, () => {
   console.log(`server is running `);
 });

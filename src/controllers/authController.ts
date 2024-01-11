@@ -1,8 +1,18 @@
-import User from "../models/userModel";
+import { Request, Response, NextFunction } from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import speakeasy from "speakeasy";
 import sendMail from "../assits/sendMails";
+import catchAsync from "../utils/catchAsync";
+import AppError from "../utils/appError";
+import User from "../models/userModel";
+import {
+  createAccessToken,
+  verifyAccessToken,
+  hashPassword,
+  comparePassword,
+  responseAndToken,
+} from "../utils/authHelperFunction";
 
 const secret = speakeasy.generateSecret({ length: 20 });
 
@@ -11,99 +21,55 @@ let validateEmail = function (email: string) {
   return re.test(email);
 };
 
-export const signUp = async (req: any, res: any) => {
-  try {
+export const signUp = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
     const { name, email, password, role } = req.body;
     if (!name) {
-      return res.status(400).json("please enter your name");
+      return next(new AppError("please enter your name", 400));
     }
     if (!email) {
-      return res.status(400).json("please enter your email");
+      return next(new AppError("please enter your email", 400));
     }
     if (!validateEmail(email)) {
-      return res.status(400).json("please enter your valid email");
+      return next(new AppError("please enter a valid email", 400));
     }
     if (!password) {
-      return res.status(400).json("please enter your password");
+      return next(new AppError("please enter your password", 400));
     }
     let check = await User.findOne({ email: email });
     if (check) {
-      return res.status(400).json("this email is already exists");
+      return next(new AppError("email already exists", 400));
     }
 
-    let token: string;
-    let hashed = await bcrypt.hash(password, 10);
+    let hashed = hashPassword(password);
     let user = await User.create({
       name,
       email,
       password: hashed,
       role,
     });
-    token = jwt.sign(
-      {
-        name,
-        email,
-        image:
-          "https://www.shutterstock.com/image-vector/user-profile-icon-vector-avatar-600nw-2247726673.jpg",
-        role: role ? role : "client",
-        id: user._id,
-        password: hashed,
-      },
-      "HS256",
-      {
-        expiresIn: "24h",
-      }
-    );
-    return res.status(200).json(token);
-  } catch (error) {
-    console.log(error);
-    return res.status(500).json("something went wrong");
+    responseAndToken(user, res, 201);
   }
-};
+);
 
-export const signIn = async (req: any, res: any) => {
-  try {
+export const signIn = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
     const { email, password } = req.body;
     if (!email) {
-      return res.status(400).json("please enter your email");
+      return next(new AppError("please enter your email", 400));
     }
     if (!password) {
-      return res.status(400).json("please enter your password");
+      return next(new AppError("please enter your password", 400));
     }
     const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(400).json("email is wrong");
+
+    if (!user || !(await comparePassword(password, user.password))) {
+      return next(new AppError("Invalid email or password", 401));
     }
-    console.log(user);
-    bcrypt.compare(password, user.password).then(async (same: boolean) => {
-      if (!same) {
-        return res.status(400).json("the password is wrong");
-      }
-      const token: string = jwt.sign(
-        {
-          name: user.name,
-          id: user._id,
-          role: user.role,
-          image: user.image,
-          phone: user.phone,
-          country: user.country,
-          storeName: user.storeName,
-          storeLink: user.storeLink,
-          merchantID: user.merchantID,
-          password: user.password,
-        },
-        "HS256",
-        {
-          expiresIn: "24h",
-        }
-      );
-      return res.status(200).json(token);
-    });
-  } catch (error) {
-    console.log(error);
-    return res.status(500).json("something went wrong");
+
+    responseAndToken(user, res, 200);
   }
-};
+);
 
 export const editProfile = async (req: any, res: any) => {
   try {

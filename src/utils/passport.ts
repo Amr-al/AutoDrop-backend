@@ -2,7 +2,7 @@ import passport from "passport";
 import { Strategy, VerifyCallback } from "passport-google-oauth2";
 import { Request } from "express";
 import { IProfileGoogle } from "../types/auth";
-import { generateProfile } from "../controllers/userController";
+import { generateProfile } from "../controllers/authController";
 
 passport.use(
   new Strategy(

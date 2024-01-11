@@ -6,8 +6,7 @@ import {
   editProfile,
   forgetPassword,
   sendForgetMail,
-  generateProfile,
-} from "../controllers/userController";
+} from "../controllers/authController";
 import upload from "../assits/multer";
 
 const router = Router();
