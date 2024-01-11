@@ -1,4 +1,5 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
+
 const userModel = new mongoose.Schema(
   {
     name: { type: String, required: true, maxLength: 40 },
@@ -21,5 +22,4 @@ const userModel = new mongoose.Schema(
 );
 const User = mongoose.model("User", userModel);
 
-module.exports = User;
-export {};
+export default User;
