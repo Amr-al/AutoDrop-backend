@@ -1,19 +1,21 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-const multer = require('multer');
-const { CloudinaryStorage } = require("multer-storage-cloudinary");
-const cloudinary = require("cloudinary").v2;
-cloudinary.config({
-    cloud_name: process.env.cloud_name,
-    api_key: process.env.api_key,
-    api_secret: process.env.api_secret,
-    secure: true,
-});
-const storage = new CloudinaryStorage({
-    cloudinary: cloudinary,
-    params: {
-        folder: "AutoDrop",
+const multer_1 = __importDefault(require("multer"));
+const storage = multer_1.default.diskStorage({
+    filename: (req, file, cb) => {
+        cb(null, file.originalname);
     },
 });
-const upload = multer({ storage: storage });
-module.exports = upload;
+const multerFilter = (req, file, cb) => {
+    if (file.mimetype.startsWith("image") || file.mimetype.startsWith("video")) {
+        cb(null, true);
+    }
+    else {
+        cb(null, false);
+    }
+};
+const upload = (0, multer_1.default)({ storage: storage, fileFilter: multerFilter });
+exports.default = upload;

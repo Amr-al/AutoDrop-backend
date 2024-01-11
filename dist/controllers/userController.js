@@ -8,13 +8,17 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-const User = require("../models/userModel");
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
-const speakeasy = require("speakeasy");
-const secret = speakeasy.generateSecret({ length: 20 });
-const sendEmail = require("../assits/sendMails");
+exports.generateProfile = exports.sendForgetMail = exports.forgetPassword = exports.editProfile = exports.signIn = exports.signUp = void 0;
+const userModel_1 = __importDefault(require("../models/userModel"));
+const bcrypt_1 = __importDefault(require("bcrypt"));
+const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+const speakeasy_1 = __importDefault(require("speakeasy"));
+const sendMails_1 = __importDefault(require("../assits/sendMails"));
+const secret = speakeasy_1.default.generateSecret({ length: 20 });
 let validateEmail = function (email) {
     let re = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
     return re.test(email);
@@ -34,19 +38,19 @@ const signUp = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         if (!password) {
             return res.status(400).json("please enter your password");
         }
-        let check = yield User.findOne({ email: email });
+        let check = yield userModel_1.default.findOne({ email: email });
         if (check) {
             return res.status(400).json("this email is already exists");
         }
         let token;
-        let hashed = yield bcrypt.hash(password, 10);
-        let user = yield User.create({
+        let hashed = yield bcrypt_1.default.hash(password, 10);
+        let user = yield userModel_1.default.create({
             name,
             email,
             password: hashed,
             role,
         });
-        token = jwt.sign({
+        token = jsonwebtoken_1.default.sign({
             name,
             email,
             image: "https://www.shutterstock.com/image-vector/user-profile-icon-vector-avatar-600nw-2247726673.jpg",
@@ -63,6 +67,7 @@ const signUp = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         return res.status(500).json("something went wrong");
     }
 });
+exports.signUp = signUp;
 const signIn = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { email, password } = req.body;
@@ -72,16 +77,16 @@ const signIn = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         if (!password) {
             return res.status(400).json("please enter your password");
         }
-        const user = yield User.findOne({ email });
+        const user = yield userModel_1.default.findOne({ email });
         if (!user) {
             return res.status(400).json("email is wrong");
         }
         console.log(user);
-        bcrypt.compare(password, user.password).then((same) => __awaiter(void 0, void 0, void 0, function* () {
+        bcrypt_1.default.compare(password, user.password).then((same) => __awaiter(void 0, void 0, void 0, function* () {
             if (!same) {
                 return res.status(400).json("the password is wrong");
             }
-            const token = jwt.sign({
+            const token = jsonwebtoken_1.default.sign({
                 name: user.name,
                 id: user._id,
                 role: user.role,
@@ -103,6 +108,7 @@ const signIn = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         return res.status(500).json("something went wrong");
     }
 });
+exports.signIn = signIn;
 const editProfile = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         if (req.body.password &&
@@ -110,11 +116,11 @@ const editProfile = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
             return res.status(400).json("make sure that you entered a correct data");
         }
         let password = null;
-        let user = yield User.findById(req.user.id);
+        let user = yield userModel_1.default.findById(req.user.id);
         if (req.body.password) {
-            password = yield bcrypt.hash(req.body.password, 10);
+            password = yield bcrypt_1.default.hash(req.body.password, 10);
         }
-        let same = yield bcrypt.compare(req.body.currentPassword, user.password);
+        let same = yield bcrypt_1.default.compare(req.body.currentPassword, user.password);
         if (!same) {
             return res.status(400).json("current password is wrong");
         }
@@ -129,8 +135,8 @@ const editProfile = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
             storeLink: req.body.storeLink || req.user.storeLink,
             id: req.user.id,
         };
-        yield User.findByIdAndUpdate(req.user.id, update);
-        const token = jwt.sign(update, "HS256", {
+        yield userModel_1.default.findByIdAndUpdate(req.user.id, update);
+        const token = jsonwebtoken_1.default.sign(update, "HS256", {
             expiresIn: "24h",
         });
         return res.status(200).json(token);
@@ -140,6 +146,7 @@ const editProfile = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         return res.status(500).json("something went wrong");
     }
 });
+exports.editProfile = editProfile;
 const forgetPassword = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     let { id, OTP, password, confirmPassword } = req.body;
     if (!id)
@@ -151,17 +158,17 @@ const forgetPassword = (req, res) => __awaiter(void 0, void 0, void 0, function*
     if (confirmPassword != password)
         return res.status(400).json("the two passwords are not the same");
     try {
-        let user = yield User.findOne({ _id: id, OTP: OTP });
+        let user = yield userModel_1.default.findOne({ _id: id, OTP: OTP });
         if (!user) {
             return res.status(400).json("user doesn't exist");
         }
         else {
-            let hashed = yield bcrypt.hash(password, 10);
-            const code = speakeasy.totp({
+            let hashed = yield bcrypt_1.default.hash(password, 10);
+            const code = speakeasy_1.default.totp({
                 secret: secret.base32,
                 encoding: "base32",
             });
-            yield User.findOneAndUpdate({ _id: id, OTP: OTP }, { OTP: code, password: hashed });
+            yield userModel_1.default.findOneAndUpdate({ _id: id, OTP: OTP }, { OTP: code, password: hashed });
             return res.status(200).json("password changed successfully");
         }
     }
@@ -170,24 +177,25 @@ const forgetPassword = (req, res) => __awaiter(void 0, void 0, void 0, function*
         return res.status(500).json("something went wrong");
     }
 });
+exports.forgetPassword = forgetPassword;
 const sendForgetMail = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { email } = req.body;
         let check = validateEmail(email);
         if (!check)
             return res.status(400).json("Please enter a valid email");
-        const user = yield User.findOne({ email: email });
+        const user = yield userModel_1.default.findOne({ email: email });
         if (!user) {
             return res.status(400).json("User doesn't exist");
         }
-        const code = speakeasy.totp({
+        const code = speakeasy_1.default.totp({
             secret: secret.base32,
             encoding: "base32",
         });
         user.OTP = code;
         let base = process.env.Frontend_Link;
         const url = `${base}/resetpassword/${user._id}/${user.OTP}`;
-        sendEmail("اعاده تعيين كلمه السر", `<h4>اضغط علي الرابط التالي لاعاده تعيين كلمه المرر</h4><a href=${url}>${url}<a/> <h4>فريق [Auto Drop]</h4>`, email);
+        (0, sendMails_1.default)("اعاده تعيين كلمه السر", `<h4>اضغط علي الرابط التالي لاعاده تعيين كلمه المرر</h4><a href=${url}>${url}<a/> <h4>فريق [Auto Drop]</h4>`, email);
         user.save();
         return res.status(200).json("message sent");
     }
@@ -196,9 +204,12 @@ const sendForgetMail = (req, res) => __awaiter(void 0, void 0, void 0, function*
         return res.status(500).json("something went wrong");
     }
 });
+exports.sendForgetMail = sendForgetMail;
 const generateProfile = (userProfile) => __awaiter(void 0, void 0, void 0, function* () {
-    let email = userProfile.emails[0].value, name = userProfile.displayName;
-    let user = yield User.findOne({ email: email }), token = null;
+    // console.log(userProfile);
+    let email = userProfile._json.email, name = userProfile._json.name;
+    console.log(email);
+    let user = yield userModel_1.default.findOne({ email: email }), token = null;
     if (user) {
         let tmp = {
             name: user.name,
@@ -206,37 +217,30 @@ const generateProfile = (userProfile) => __awaiter(void 0, void 0, void 0, funct
             id: user._id,
             email: user.email,
             phone: user.phone,
-            country: user.cou,
+            country: user.country,
         };
-        token = jwt.sign(tmp, "HS256");
+        token = jsonwebtoken_1.default.sign(tmp, "HS256");
     }
     else {
         let randm = Math.floor(Math.random() * 10000) + 1;
         let pass = "quflpdj" + randm, original;
         original = pass;
-        pass = yield bcrypt.hash(pass, 10);
-        user = yield User.create({
+        pass = yield bcrypt_1.default.hash(pass, 10);
+        user = yield userModel_1.default.create({
             email: email,
             name: name,
             password: pass,
-            image: userProfile.photos[0].value,
+            image: userProfile._json.picture,
         });
-        token = jwt.sign({
+        token = jsonwebtoken_1.default.sign({
             _id: user._id,
             email: email,
             name: name,
             password: pass,
-            image: userProfile.photos[0].value,
+            image: userProfile._json.picture,
         }, "HS256");
-        sendEmail("👋 ترحيب", `<h1>مرحبًا بك في موقعنا 👋</h1><h3>عزيزي ${name}</h3><h3>شكرًا لانضمامك إلى موقعنا. نحن سعداء لكونك عضوًا في مجتمعنا.</h3><h3>الرقم السري الخاصك بيك هو ${original}</h3><h3>يُرجى النظر حولك واستكشاف جميع الميزات التي نقدمها. إذا كان لديك أي أسئلة أو مشاكل، فلا تتردد في الاتصال بنا.</h3><h3>مرة أخرى، نرحب بك في موقعنا!</h3><h3>أطيب التحيات،</h3> <h3>فريق [Auto Drop]</h3>`, email);
+        (0, sendMails_1.default)("👋 ترحيب", `<h1>مرحبًا بك في موقعنا 👋</h1><h3>عزيزي ${name}</h3><h3>شكرًا لانضمامك إلى موقعنا. نحن سعداء لكونك عضوًا في مجتمعنا.</h3><h3>الرقم السري الخاصك بيك هو ${original}</h3><h3>يُرجى النظر حولك واستكشاف جميع الميزات التي نقدمها. إذا كان لديك أي أسئلة أو مشاكل، فلا تتردد في الاتصال بنا.</h3><h3>مرة أخرى، نرحب بك في موقعنا!</h3><h3>أطيب التحيات،</h3> <h3>فريق [Auto Drop]</h3>`, email);
     }
     return token;
 });
-module.exports = {
-    signUp,
-    signIn,
-    editProfile,
-    sendForgetMail,
-    forgetPassword,
-    generateProfile,
-};
+exports.generateProfile = generateProfile;

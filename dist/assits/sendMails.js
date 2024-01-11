@@ -1,4 +1,5 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 const nodemailer = require("nodemailer");
 const transporter = nodemailer.createTransport({
     service: "gmail",
@@ -23,4 +24,4 @@ const sendMail = (sub, cont, to) => {
         }
     });
 };
-module.exports = sendMail;
+exports.default = sendMail;
