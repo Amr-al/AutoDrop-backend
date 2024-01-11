@@ -41,7 +41,7 @@ export const signUp = catchAsync(
       return next(new AppError("email already exists", 400));
     }
 
-    let hashed = hashPassword(password);
+    let hashed = await hashPassword(password);
     let user = await User.create({
       name,
       email,
