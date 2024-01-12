@@ -174,7 +174,7 @@ export const sendForgetMail = async (req: any, res: any) => {
 };
 
 export const generateProfile = async (userProfile: any): Promise<string> => {
-  // console.log(userProfile);
+   console.log(userProfile);
 
   let email = userProfile._json.email,
     name = userProfile._json.name;
@@ -202,7 +202,7 @@ export const generateProfile = async (userProfile: any): Promise<string> => {
       email: email,
       name: name,
       password: pass,
-      image: userProfile._json.picture,
+      image: userProfile?._json.picture || userProfile.email,
     });
     token = jwt.sign(
       {
@@ -210,7 +210,7 @@ export const generateProfile = async (userProfile: any): Promise<string> => {
         email: email,
         name: name,
         password: pass,
-        image: userProfile._json.picture,
+        image: userProfile?._json.picture || userProfile.email,
       },
       "HS256"
     );

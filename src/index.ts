@@ -67,7 +67,7 @@ if (process.env.NODE_ENV === "production") {
 conect();
 
 //Global resources
-app.use("/api/v1/auth", userRoutes);
+app.use("/auth", userRoutes);
 
 // Handle requests from wrong urls
 app.all("*", (req, res, next) => {
@@ -77,6 +77,6 @@ app.all("*", (req, res, next) => {
 //Using global error handling middleware
 app.use(globalErrorHandler);
 
-app.listen(10000, () => {
+app.listen(5000, () => {
   console.log(`server is running `);
 });
