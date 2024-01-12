@@ -7,8 +7,6 @@ import catchAsync from "../utils/catchAsync";
 import AppError from "../utils/appError";
 import User from "../models/userModel";
 import {
-  createAccessToken,
-  verifyAccessToken,
   hashPassword,
   comparePassword,
   responseAndToken,
@@ -71,13 +69,13 @@ export const signIn = catchAsync(
   }
 );
 
-export const editProfile = async (req: any, res: any) => {
-  try {
+export const editProfile = catchAsync(
+  async (req: any, res: Response, next: NextFunction) => {
     if (
       req.body.password &&
       (!req.body.confirmPassword || !req.body.currentPassword)
     ) {
-      return res.status(400).json("make sure that you entered a correct data");
+      return next(new AppError("please enter your current password", 400));
     }
     let password = null;
     let user = await User.findById(req.user.id);
@@ -89,7 +87,7 @@ export const editProfile = async (req: any, res: any) => {
       user!.password
     );
     if (!same) {
-      return res.status(400).json("current password is wrong");
+      return next(new AppError("wrong password", 400));
     }
     let update: Object = {
       name: req.body.name || req.user.name,
@@ -107,23 +105,20 @@ export const editProfile = async (req: any, res: any) => {
       expiresIn: "24h",
     });
     return res.status(200).json(token);
-  } catch (error) {
-    console.log(error);
-    return res.status(500).json("something went wrong");
   }
-};
+);
 
-export const forgetPassword = async (req: any, res: any) => {
-  let { id, OTP, password, confirmPassword } = req.body;
-  if (!id) return res.status(400).json("wrong data");
-  if (!OTP) return res.status(400).json("wrong data");
-  if (!password) return res.status(400).json("the password is missing");
-  if (confirmPassword != password)
-    return res.status(400).json("the two passwords are not the same");
-  try {
+export const forgetPassword = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    let { id, OTP, password, confirmPassword } = req.body;
+    if (!id) return next(new AppError("wrong data", 400));
+    if (!OTP) return next(new AppError("Wrong data", 400));
+    if (!password) return next(new AppError("please enter your password", 400));
+    if (confirmPassword != password)
+      return next(new AppError("passwords don't match", 400));
     let user = await User.findOne({ _id: id, OTP: OTP });
     if (!user) {
-      return res.status(400).json("user doesn't exist");
+      return next(new AppError("wrong data", 400));
     } else {
       let hashed: string = await bcrypt.hash(password, 10);
       const code = speakeasy.totp({
@@ -138,20 +133,17 @@ export const forgetPassword = async (req: any, res: any) => {
 
       return res.status(200).json("password changed successfully");
     }
-  } catch (err) {
-    console.log(err);
-    return res.status(500).json("something went wrong");
   }
-};
+);
 
-export const sendForgetMail = async (req: any, res: any) => {
-  try {
-    const { email } = req.body;
+export const sendForgetMail = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { email, locale } = req.body;
     let check = validateEmail(email);
-    if (!check) return res.status(400).json("Please enter a valid email");
+    if (!check) return next(new AppError("please enter a valid email", 400));
     const user = await User.findOne({ email: email });
     if (!user) {
-      return res.status(400).json("User doesn't exist");
+      return next(new AppError("email doesn't exist", 400));
     }
     const code = speakeasy.totp({
       secret: secret.base32,
@@ -159,7 +151,7 @@ export const sendForgetMail = async (req: any, res: any) => {
     });
     user.OTP = code;
     let base: string | undefined = process.env.Frontend_Link;
-    const url = `${base}/resetpassword/${user._id}/${user.OTP}`;
+    const url = `${base}/${locale}/resetPassword/${user._id}/${user.OTP}`;
     sendMail(
       "اعاده تعيين كلمه السر",
       `<h4>اضغط علي الرابط التالي لاعاده تعيين كلمه المرر</h4><a href=${url}>${url}<a/> <h4>فريق [Auto Drop]</h4>`,
@@ -167,15 +159,10 @@ export const sendForgetMail = async (req: any, res: any) => {
     );
     user.save();
     return res.status(200).json("message sent");
-  } catch (err) {
-    console.log(err);
-    return res.status(500).json("something went wrong");
   }
-};
+);
 
 export const generateProfile = async (userProfile: any): Promise<string> => {
-  // console.log(userProfile);
-
   let email = userProfile._json.email,
     name = userProfile._json.name;
   console.log(email);
@@ -220,5 +207,6 @@ export const generateProfile = async (userProfile: any): Promise<string> => {
       email
     );
   }
+
   return token;
 };
