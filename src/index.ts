@@ -37,10 +37,10 @@ app.use(
     secret: process.env.secret!,
     resave: false,
     saveUninitialized: false,
-    cookie: {
-      secure: process.env.NODE_ENV === "production",
-      httpOnly: true,
-    },
+    // cookie: {
+    //   // secure: process.env.NODE_ENV === "production",
+    //   httpOnly: true,
+    // },
   })
 );
 
@@ -75,7 +75,7 @@ app.all("*", (req, res, next) => {
 });
 
 //Using global error handling middleware
-app.use(globalErrorHandler);
+//app.use(globalErrorHandler);
 
 app.listen(10000, () => {
   console.log(`server is running `);

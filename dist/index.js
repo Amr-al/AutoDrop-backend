@@ -40,7 +40,6 @@ const xss_1 = __importDefault(require("xss"));
 const compression_1 = __importDefault(require("compression"));
 const DBConnection_1 = require("./utils/DBConnection");
 const userRoutes_1 = __importDefault(require("./routes/userRoutes"));
-const errorController_1 = __importDefault(require("./controllers/errorController"));
 const appError_1 = __importDefault(require("./utils/appError"));
 const app = (0, express_1.default)();
 //Parse json bodies
@@ -57,10 +56,10 @@ app.use((0, express_session_1.default)({
     secret: process.env.secret,
     resave: false,
     saveUninitialized: false,
-    cookie: {
-        secure: process.env.NODE_ENV === "production",
-        httpOnly: true,
-    },
+    // cookie: {
+    //   // secure: process.env.NODE_ENV === "production",
+    //   httpOnly: true,
+    // },
 }));
 //Initialize passport
 app.use(passport_1.default.initialize());
@@ -84,7 +83,7 @@ app.all("*", (req, res, next) => {
     next(new appError_1.default(`Can't find ${req.originalUrl} on this server!`, 404));
 });
 //Using global error handling middleware
-app.use(errorController_1.default);
+//app.use(globalErrorHandler);
 app.listen(10000, () => {
     console.log(`server is running `);
 });
