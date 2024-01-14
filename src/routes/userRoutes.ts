@@ -52,8 +52,8 @@ router.get(
 
     req.user = userProfile;
     next();
-    let email = userProfile._json.email,
-      name = userProfile._json.name;
+    let email = userProfile.emails[0].value,
+      name = userProfile.displayName;
     let user = await User.findOne({ email: email }),
       token = null;
     if (user) {
