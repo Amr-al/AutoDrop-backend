@@ -37,10 +37,10 @@ app.use(
     secret: process.env.secret!,
     resave: false,
     saveUninitialized: false,
-    // cookie: {
-    //   // secure: process.env.NODE_ENV === "production",
-    //   httpOnly: true,
-    // },
+    cookie: {
+      secure: process.env.NODE_ENV === "production",
+      httpOnly: true,
+    },
   })
 );
 
@@ -60,9 +60,9 @@ app.use(helmet());
 xss('<script>alert("xss");</script>');
 
 //Compress all text sent in the response to the client
-// if (process.env.NODE_ENV === "production") {
-//   app.use(compression());
-// }
+if (process.env.NODE_ENV === "production") {
+  app.use(compression());
+}
 
 conect();
 
@@ -70,12 +70,12 @@ conect();
 app.use("/api/v1/auth", userRoutes);
 
 // Handle requests from wrong urls
-// app.all("*", (req, res, next) => {
-//   next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
-// });
+app.all("*", (req, res, next) => {
+  next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
+});
 
 //Using global error handling middleware
-//app.use(globalErrorHandler);
+app.use(globalErrorHandler);
 
 app.listen(10000, () => {
   console.log(`server is running `);

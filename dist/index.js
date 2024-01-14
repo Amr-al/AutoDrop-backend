@@ -37,8 +37,11 @@ const cookie_parser_1 = __importDefault(require("cookie-parser"));
 const morgan_1 = __importDefault(require("morgan"));
 const helmet_1 = __importDefault(require("helmet"));
 const xss_1 = __importDefault(require("xss"));
+const compression_1 = __importDefault(require("compression"));
 const DBConnection_1 = require("./utils/DBConnection");
 const userRoutes_1 = __importDefault(require("./routes/userRoutes"));
+const errorController_1 = __importDefault(require("./controllers/errorController"));
+const appError_1 = __importDefault(require("./utils/appError"));
 const app = (0, express_1.default)();
 //Parse json bodies
 app.use(express_1.default.json());
@@ -54,10 +57,10 @@ app.use((0, express_session_1.default)({
     secret: process.env.secret,
     resave: false,
     saveUninitialized: false,
-    // cookie: {
-    //   // secure: process.env.NODE_ENV === "production",
-    //   httpOnly: true,
-    // },
+    cookie: {
+        secure: process.env.NODE_ENV === "production",
+        httpOnly: true,
+    },
 }));
 //Initialize passport
 app.use(passport_1.default.initialize());
@@ -70,18 +73,18 @@ app.use((0, helmet_1.default)());
 //Data sanitization against xss attacks
 (0, xss_1.default)('<script>alert("xss");</script>');
 //Compress all text sent in the response to the client
-// if (process.env.NODE_ENV === "production") {
-//   app.use(compression());
-// }
+if (process.env.NODE_ENV === "production") {
+    app.use((0, compression_1.default)());
+}
 (0, DBConnection_1.conect)();
 //Global resources
 app.use("/api/v1/auth", userRoutes_1.default);
 // Handle requests from wrong urls
-// app.all("*", (req, res, next) => {
-//   next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
-// });
+app.all("*", (req, res, next) => {
+    next(new appError_1.default(`Can't find ${req.originalUrl} on this server!`, 404));
+});
 //Using global error handling middleware
-//app.use(globalErrorHandler);
+app.use(errorController_1.default);
 app.listen(10000, () => {
     console.log(`server is running `);
 });
