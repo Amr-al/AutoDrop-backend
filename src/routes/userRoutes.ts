@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { Strategy, VerifyCallback } from "passport-google-oauth2";
+import GoogleStrategy from "passport-google-oauth";
 import passport from "passport";
 import {
   signUp,
@@ -26,7 +26,7 @@ router.patch("/forgetpassword", forgetPassword);
 /*  Google AUTH  */
 let userProfile: any;
 passport.use(
-  new Strategy(
+  new GoogleStrategy.OAuth2Strategy(
     {
       clientID: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
@@ -34,9 +34,7 @@ passport.use(
       passReqToCallback: true,
     },
     function (accessToken: any, refreshToken: any, profile: any, done: any) {
-      console.log(profile);
       userProfile = profile;
-
       return done(null, userProfile);
     }
   )
@@ -50,7 +48,7 @@ router.get(
   "/google/callback",
   passport.authenticate("google", { failureRedirect: "/auth/error" }),
   async (req: any, res: any, next: any) => {
-    // console.log(userProfile);
+    console.log(userProfile);
 
     req.user = userProfile;
     next();
