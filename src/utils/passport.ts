@@ -19,7 +19,6 @@ passport.use(
       profile: IProfileGoogle,
       done: VerifyCallback
     ) {
-      await generateProfile(profile);
       done(null, profile);
     }
   )
