@@ -40,6 +40,8 @@ const xss_1 = __importDefault(require("xss"));
 const compression_1 = __importDefault(require("compression"));
 const DBConnection_1 = require("./utils/DBConnection");
 const userRoutes_1 = __importDefault(require("./routes/userRoutes"));
+const errorController_1 = __importDefault(require("./controllers/errorController"));
+const appError_1 = __importDefault(require("./utils/appError"));
 const app = (0, express_1.default)();
 //Parse json bodies
 app.use(express_1.default.json());
@@ -77,6 +79,12 @@ if (process.env.NODE_ENV === "production") {
 (0, DBConnection_1.conect)();
 //Global resources
 app.use("/api/v1/auth", userRoutes_1.default);
-app.listen(5000, () => {
+// Handle requests from wrong urls
+app.all("*", (req, res, next) => {
+    next(new appError_1.default(`Can't find ${req.originalUrl} on this server!`, 404));
+});
+//Using global error handling middleware
+app.use(errorController_1.default);
+app.listen(10000, () => {
     console.log(`server is running `);
 });
